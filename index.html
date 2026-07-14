@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Premium Finance — Подбор крупных займов и кредитных карт</title>
+    
+    <!-- Подключаем премиальный шрифт Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================================================
+           1. UI KIT & СТИЛИ ИНТЕРФЕЙСА (Стиль Apple, Stripe, Revolut)
+           ========================================================================== */
+        :root {
+            --bg-main: #0B0F19;         /* Глубокий индиго-графит */
+            --bg-card: #161B26;         /* Карточки с эффектом стекла */
+            --text-primary: #FFFFFF;    /* Белый заголовок */
+            --text-secondary: #8F9CAE;  /* Приглушенный серый текст */
+            --text-muted: #4B5563;     /* Темно-серый для реквизитов */
+            --accent-mint: #00F5D4;     /* Мятный неоновый акцент */
+            --accent-blue: #3B82F6;     /* Электро-синий для ползунков */
+            --accent-gold: #F59E0B;     /* Премиальный золото-акцент для карт */
+            --success: #10B981;         /* Изумрудный зеленый */
+            --danger: #EF4444;          /* Красный для ставок */
+            --purple: #A855F7;          /* Фиолетовый акцент */
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        section {
+            padding: 50px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        h1, h2, h3 {
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        /* Финтех кнопки действия */
+        .btn-primary {
+            background-color: var(--accent-mint);
+            color: #0B0F19;
+            border: none;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 245, 212, 0.4);
+            background-color: #ffffff;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--accent-gold), #D97706);
+            color: #ffffff;
+        }
+        .btn-gold:hover {
+            background: #ffffff;
+            color: #0B0F19;
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.4);
+        }
+
+        /* ШАПКА */
+        .site-header {
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-row { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 700; }
+        .logo span { color: var(--accent-mint); }
+        .header-note { font-size: 11px; color: var(--text-secondary); text-align: right; }
+
+        /* БЛОК 1: HERO + ПРЕМИУМ КАЛЬКУЛЯТОР */
+        .hero { text-align: center; padding: 40px 0; }
+        .hero h1 { font-size: 38px; margin-bottom: 12px; background: linear-gradient(135deg, #FFF 0%, #8F9CAE 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 15px; color: var(--text-secondary); max-width: 600px; margin: 0 auto 28px; }
+
+        .calc-widget {
+            background: var(--bg-card); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px; padding: 32px; max-width: 540px; margin: 0 auto; backdrop-filter: blur(12px);
+        }
+        .calc-widget-group { margin-bottom: 20px; text-align: left; }
+        .calc-label-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); }
+        .calc-value { color: var(--text-primary); font-weight: 600; }
+        
+        .slider { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #242B3A; outline: none; }
+        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-blue); cursor: pointer; transition: transform 0.1s; }
+        .slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        .calc-live-indicator { font-size: 14px; color: var(--text-secondary); margin: 18px 0; background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 10px; }
+        .calc-live-indicator span { color: var(--accent-mint); font-weight: 600; }
+
+        /* НАВИГАЦИЯ ПО ВЕРХНИМ ТАБАМ */
+        .main-tabs-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 16px; flex-wrap: wrap; }
+        .main-trigger { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); color: var(--text-secondary); padding: 12px 20px; border-radius: 14px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+        .main-trigger.active { background: var(--accent-mint); color: #0B0F19; border-color: var(--accent-mint); box-shadow: 0 4px 15px rgba(0, 245, 212, 0.2); }
+
+        /* НАВИГАЦИЯ ПО ПОД-ВКЛАДКАМ ВНУТРИ ТАБА 1 */
+        .sub-tabs-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+        .sub-trigger { padding: 8px 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .sub-trigger.active { background: var(--accent-blue); color: #FFF; border-color: var(--accent-blue); }
+        .sub-trigger.gold-sub-tab.active { background: var(--accent-gold); color: #FFF; border-color: var(--accent-gold); }
+
+        .tab-pane, .sub-pane { display: none; }
+        .tab-pane.active, .sub-pane.active { display: block; }
+
+        .catalog-list { display: flex; flex-direction: column; gap: 16px; }
+        
+        /* РОСКОШНЫЙ СТРОЧНЫЙ ВИДЖЕТ КАРТОЧКИ */
+        .mfo-row-card {
+            background: var(--bg-card); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px;
+            padding: 20px 24px; display: grid; grid-template-columns: 1.8fr 2.2fr 2fr 1.5fr; align-items: center;
+            gap: 24px; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); animation: fadeIn 0.4s ease forwards;
+            position: relative;
+        }
+        .mfo-row-card:hover { transform: translateY(-2px); border-color: var(--accent-mint); box-shadow: 0 10px 30px rgba(0, 245, 212, 0.05); }
+        .mfo-row-card.cc-card-style:hover { border-color: var(--accent-gold); box-shadow: 0 10px 30px rgba(245, 158, 11, 0.05); }
+
+        .meta-zone { display: flex; flex-direction: column; gap: 4px; }
+        .brand-name-row { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .brand-legal-row { font-size: 11px; color: var(--text-secondary); }
+        
+        .styled-info-banner {
+            background: rgba(255, 255, 255, 0.02); border-left: 3px solid var(--accent-mint);
+            padding: 8px 12px; border-radius: 0 8px 8px 0; font-size: 12px; color: #FFF; font-weight: 500;
+        }
+        .cc-card-style .styled-info-banner { border-left-color: var(--accent-gold); }
+
+        .metrics-zone-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .m-block { display: flex; flex-direction: column; }
+        .m-label-text { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em; }
+        .m-value-text { font-size: 15px; font-weight: 600; }
+        .m-value-text.red-txt { color: var(--danger); }
+        .m-value-text.green-txt { color: var(--accent-mint); }
+
+        .action-zone-row { display: flex; flex-direction: column; gap: 6px; text-align: right; }
+        .law-erid-text { font-size: 9px; color: #556173; line-height: 1.3; }
+
+        /* Финтех-бейджи */
+        .mini-badge { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 40px; text-transform: uppercase; letter-spacing: 0.03em; }
+        .mb-hit { background: var(--danger); color: #fff; }
+        .mb-pop { background: var(--success); color: #fff; }
+        .mb-often { background: var(--accent-blue); color: #fff; }
+        .mb-best { background: var(--purple); color: #fff; }
+
+        .disclaimer-box-clean { background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.04); padding: 20px; border-radius: 12px; font-size: 12px; color: #8F9CAE; margin-top: 30px; }
+        .disclaimer-box-clean strong { color: var(--accent-mint); }
+
+        /* ПОДВАЛ */
+        footer { background: #060810; padding: 50px 0; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; color: var(--text-secondary); margin-top: 50px; }
+        .footer-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #3A4A6A; margin-bottom: 24px; }
+        .footer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; margin-top: 20px; }
+        .footer-card { background: rgba(255,255,255,0.01); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02); }
+        .fc-head { font-weight: 600; color: #FFF; margin-bottom: 4px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 992px) {
+            .mfo-row-card { grid-template-columns: 1fr; gap: 16px; padding: 20px; }
+            .action-zone-row { text-align: left; }
+            .main-tabs-nav { justify-content: flex-start; overflow-x: auto; white-space: nowrap; padding-bottom: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+  <!-- ШАПКА -->
+  <header class="site-header">
+    <div class="container header-row">
+      <div class="logo">🚀 Smart<span>Premium</span></div>
+      <div class="header-note">В соответствии с требованиями ст. 18.1 ФЗ «О рекламе». Информация актуальна на 2026 год.</div>
+    </div>
+  </header>
+
+  <!-- БЛОК 1: HERO SECTION + КАЛЬКУЛЯТОР -->
+  <section class="hero container">
+    <h1>Премиальные лимиты и Кредитные карты</h1>
+    <p>Интеллектуальная финтех-платформа консолидации лучших предложений финансового рынка с высоким лимитом одобрения.</p>
+    
+    <div class="calc-widget">
+        <div class="calc-widget-group">
+            <div class="calc-label-row"><span>Желаемый лимит</span><span class="calc-value" id="js-amount-txt">100 000 ₽</span></div>
+            <input type="range" id="js-slider-amount" class="slider" min="10000" max="1000000" step="10000" value="100000">
+        </div>
+        <div class="calc-widget-group">
+            <div class="calc-label-row"><span>Срок использования</span><span class="calc-value" id="js-period-txt">120 дней</span></div>
+            <input type="range" id="js-slider-period" class="slider" min="15" max="365" step="5" value="120">
+        </div>
+        <div class="calc-live-indicator">
+            По запросу найдено: <span id="js-live-offers-counter">33 продукта</span>. Категория: <span style="color:var(--accent-mint)">Premium скоринг</span>
+        </div>
+        <a href="#catalog-anchor" class="btn-primary">Показать доступные варианты →</a>
+    </div>
+  </section>
+
+  <!-- БЛОК 2: ВИТРИНА ОФФЕРОВ (ТРЕХУРОВНЕВАЯ НАВИГАЦИЯ) -->
+  <section id="catalog-anchor" class="container">
+    
+    <!-- ГЛАВНЫЕ НАВИГАЦИОННЫЕ ВКЛАДКИ -->
+    <div class="main-tabs-nav">
+        <button class="main-trigger active" onclick="switchMainSiteTab('premium-zone', this)">🔥 Премиальные продукты (15)</button>
+        <button class="main-trigger" onclick="switchMainSiteTab('express-zone', this)">⚡ Моментальные экспресс-займы (11)</button>
+        <button class="main-trigger" onclick="switchMainSiteTab('zero-zone', this)">👍 Займы с беспроцентным периодом (7)</button>
+    </div>
+
+    <!-- ==================== ГЛАВНЫЙ ТАБ 1: ПРЕМИАЛЬНЫЕ ПРОДУКТЫ ==================== -->
+    <div id="premium-zone" class="tab-pane active">
+        
+        <div class="sub-tabs-nav">
+            <button class="sub-trigger active" onclick="switchSubPane('loans-sub-pane', this)">📈 Крупные займы (10)</button>
+            <button class="sub-trigger gold-sub-tab" onclick="switchSubPane('cards-sub-pane', this)">💳 Кредитные карты (5)</button>
+        </div>
+
+        <!-- Под-вкладка 1: Крупные займы (10 офферов) -->
+        <div id="loans-sub-pane" class="sub-pane active">
+            <div class="catalog-list">
+                <!-- Vivus -->
+                <div class="mfo-row-card">
+                  <div class="meta-zone">
+                    <div class="brand-name-row">Vivus <span class="mini-badge mb-hit">🔥 ХИТ</span></div>
+                    <div class="brand-legal-row">ООО МКК «Джет Мани»</div>
+                  </div>
+                  <div class="styled-info-banner">⭐ Один из лидеров рынка для заемщиков с хорошей КИ</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 100т. ₽ / 365д.</span></div>
+                    <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 90%</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/427?erid=LjN8KKWo5" target="_blank" rel="nofollow noopener">Получить лимит →</a>
+                    <div class="law-erid-text">Реклама · erid: LjN8KKWo5 · ООО МКК «Джет Мани»</div>
+                  </div>
+                </div>
+
+                <!-- Макс.Кредит -->
+                <div class="mfo-row-card">
+                  <div class="meta-zone">
+                    <div class="brand-name-row">Макс.Кредит <span class="mini-badge mb-hit">🔥 ХИТ</span></div>
+                    <div class="brand-legal-row">ООО МКК «М-Деньги»</div>
+                  </div>
+                  <div class="styled-info-banner">⭐ Доступны повышенные лимиты при повторном обращении</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 100т. ₽ / 365д.</span></div>
+                    <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 88%</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/106?erid=LjN8KN99W" target="_blank" rel="nofollow noopener">Получить лимит →</a>
+                    <div class="law-erid-text">Реклама · erid: LjN8KN99W · ООО МКК «М-Деньги»</div>
+                  </div>
+                </div>
+
+                <!-- КРЕДИТНАУ -->
+                <div class="mfo-row-card">
+                  <div class="meta-zone">
+                    <div class="brand-name-row">КРЕДИТНАУ <span class="mini-badge mb-hit">🔥 ХИТ</span></div>
+                    <div class="brand-legal-row">ООО МКК «Кредитнау»</div>
+                  </div>
+                  <div class="styled-info-banner">📊 Высокий процент одобрения среди всех скоринг-систем</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 50т. ₽ / 30д.</span></div>
+                    <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text green-txt">0% новые / 92%</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary" href="https://go.leadgid.ru/aff_c?aff_id=145486&offer_id=7349&p=10976&erid=2W5zFGQJS5X" target="_blank" rel="nofollow noopener">Получить лимит →</a>
+                    <div class="law-erid-text">Реклама · erid: 2W5zFGQJS5X · ООО МКК «Кредитнау»</div>
+                  </div>
+                </div>
+
+                <!-- ЛигаМФО -->
+                <div class="mfo-row-card">
+                  <div class="meta-zone">
+                    <div class="brand-name-row">ЛигаМФО <span class="mini-badge mb-hit">🔥 ХИТ</span></div>
+                    <div class="brand-legal-row">ООО МКК «Лига МФО»</div>
+                  </div>
+                  <div class="styled-info-banner">📊 Быстрое рассмотрение анкеты по паспорту</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 60т. ₽ / 30д.</span></div>
+                    <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text green-txt">0% новые / 88%</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/374?erid=2W5zFHrbj4C" target="_blank" rel="nofollow noopener">Получить лимит →</a>
+                    <div class="law-erid-text">Реклама · erid: 2W5zFHrbj4C · ООО МКК «Лига МФО»</div>
+                  </div>
+                </div>
+
+                <!-- А-Деньги -->
+                <div class="mfo-row-card">
+                  <div class="meta-zone">
+                    <div class="brand-name-row">А-Деньги</div>
+                    <div class="brand-legal-row">ООО МКК «А ДЕНЬГИ»</div>
+                  </div>
+                  <div class="styled-info-banner">📊 Стабильная финтех-система экспресс-проверки</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 30т. ₽ / 30д.</span></div>
+                    <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text green-txt">0% новые / 80%</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary" href="https://t-cpa.ru/1jSjNw?erid=LjN8Kzd8Y" target="_blank" rel="nofollow noopener">Получить лимит →</a>
+                    <div class="law-erid-text">Реклама · erid: LjN8Kzd8Y · ООО МКК «А ДЕНЬГИ»</div>
+                  </div>
+                </div>
+
+                <!-- ЛайкЗайм -->
+                <div class="mfo-row-card">
+                  <div class="meta-zone">
+                    <div class="brand-name-row">ЛайкЗайм</div>
+                    <div class="brand-legal-row">ООО МКК «Блай»</div>
+                  </div>
+                  <div class="styled-info-banner">⭐ Гибкий автоматический скоринг по СБП</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 50т. ₽ / 180д.</span></div>
+                    <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 75%</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary" href="https://pxl.leads.su/click/58d4aae7cdefd171e10a160165cfcbb5?erid=2W5zFK9wZFf" target="_blank" rel="nofollow noopener">Получить лимит →</a>
+                    <div class="law-erid-text">Реклама · erid: 2W5zFK9wZFf · ООО МКК «Блай»</div>
+                  </div>
+                </div>
+
+                <!-- НЕБУС -->
+                <div class="mfo-row-card">
+                  <div class="meta-zone">
+                    <div class="brand-name-row">НЕБУС <span class="mini-badge mb-pop">⭐ Популярно</span></div>
+                    <div class="brand-legal-row">ООО МКК «Небус»</div>
+                  </div>
+                  <div class="styled-info-banner">📊 Большие лимиты и выдача без справок о доходах</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 300т. ₽ / 25нед.</span></div>
+                    <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text green-txt">0% новые / 82%</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/107?erid=2W5zFJhiN3J" target="_blank" rel="nofollow noopener">Получить лимит →</a>
+                    <div class="law-erid-text">Реклама · erid: 2W5zFJhiN3J · ООО МКК «Небус»</div>
+                  </div>
+                </div>
+
+                <!-- ФИНМОЛЛ -->
+                <div class="mfo-row-card">
+                  <div class="meta-zone">
+                    <div class="brand-name-row">ФИНМОЛЛ</div>
+                    <div class="brand-legal-row">ООО МКК «ФИНМОЛЛ»</div>
+                  </div>
+                  <div class="styled-info-banner">📊 Долгосрочные займы до 100 000 ₽ на карту</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 100т. ₽ / 53нед.</span></div>
+                    <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 85%</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/54?erid=2W5zFGRMz5N" target="_blank" rel="nofollow noopener">Получить лимит →</a>
+                    <div class="law-erid-text">Реклама · erid: 2W5zFGRMz5N · ООО МКК «ФИНМОЛЛ»</div>
+                  </div>
+                </div>
+
+                <!-- Умные Наличные -->
+                <div class="mfo-row-card">
+                  <div class="meta-zone">
+                    <div class="brand-name-row">Умные Наличные <span class="mini-badge mb-often">👍 Выбирают</span></div>
+                    <div class="brand-legal-row">ООО МКК «Умный Займ»</div>
+                  </div>
+                  <div class="styled-info-banner">⭐ Лояльные круглосуточные условия при высоком КР</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 100т. ₽ / 365д.</span></div>
+                    <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 82%</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/241?erid=LjN8K54Q9" target="_blank" rel="nofollow noopener">Получить лимит →</a>
+                    <div class="law-erid-text">Реклама · erid: LjN8K54Q9 · ООО МКК «Умный Займ»</div>
+                  </div>
+                </div>
+
+                <!-- Каширо -->
+                <div class="mfo-row-card">
+                  <div class="meta-zone">
+                    <div class="brand-name-row">Cashiro</div>
+                    <div class="brand-legal-row">ООО МКК «Декада»</div>
+                  </div>
+                  <div class="styled-info-banner">⭐ Повышенный лимит для клиентов с хорошей КИ</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 80т. ₽ / 365д.</span></div>
+                    <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 78%</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary" href="https://pxl.leads.su/click/9a7c1590e57d1bb667995fee369a8f07?erid=2W5zFHdaFtL" target="_blank" rel="nofollow noopener">Получить лимит →</a>
+                    <div class="law-erid-text">Реклама · erid: 2W5zFHdaFtL · ООО МКК «Декада»</div>
+                  </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Под-вкладка 2: Кредитные карты (5 офферов) -->
+        <div id="cards-sub-pane" class="sub-pane">
+            <div class="catalog-list">
+                <!-- Уралсиб -->
+                <div class="mfo-row-card cc-card-style">
+                  <div class="meta-zone">
+                    <div class="brand-name-row" style="color:var(--accent-gold);">Уралсиб</div>
+                    <div class="brand-legal-row">ПАО «Банк Уралсиб»</div>
+                  </div>
+                  <div class="styled-info-banner">💳 Кредитная карта с бесплатным обслуживанием навсегда</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Лимит по карте</span><span class="m-value-text">до 1.5 млн ₽</span></div>
+                    <div class="m-block"><span class="m-label-text">Льготный период</span><span class="m-value-text">до 120 дней без %</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary btn-gold" href="https://t.fincpanetwork.ru/click/91237/407?erid=2W5zFH4Ww45" target="_blank" rel="nofollow noopener">Оформить карту →</a>
+                    <div class="law-erid-text">Реклама · erid: 2W5zFH4Ww45 · ПАО «Банк Уралсиб»</div>
+                  </div>
+                </div>
+
+                <!-- Карта Халва -->
+                <div class="mfo-row-card cc-card-style">
+                  <div class="meta-zone">
+                    <div class="brand-name-row" style="color:var(--accent-gold);">Карта Халва</div>
+                    <div class="brand-legal-row">ПАО «Совкомбанк»</div>
+                  </div>
+                  <div class="styled-info-banner">💳 Умная рассрочка у партнеров и кешбэком до 6%</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Лимит рассрочки</span><span class="m-value-text">до 500 000 ₽</span></div>
+                    <div class="m-block"><span class="m-label-text">Период рассрочки</span><span class="m-value-text">до 36 месяцев</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary btn-gold" href="https://t.fincpanetwork.ru/click/91237/456?erid=2W5zFJuEp7a" target="_blank" rel="nofollow noopener">Оформить карту →</a>
+                    <div class="law-erid-text">Реклама · erid: 2W5zFJuEp7a · ПАО «Совкомбанк»</div>
+                  </div>
+                </div>
+
+                <!-- Альфа-Банк -->
+                <div class="mfo-row-card cc-card-style">
+                  <div class="meta-zone">
+                    <div class="brand-name-row" style="color:var(--accent-gold);">Альфа-Банк</div>
+                    <div class="brand-legal-row">АО «Альфа-Банк»</div>
+                  </div>
+                  <div class="styled-info-banner">💳 Целый год без процентов на покупки в первый месяц</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Лимит по карте</span><span class="m-value-text">до 1 000 000 ₽</span></div>
+                    <div class="m-block"><span class="m-label-text">Льготный период</span><span class="m-value-text">до 100 дней</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary btn-gold" href="https://t.fincpanetwork.ru/click/91237/339?erid=2W5zFJjJPEG" target="_blank" rel="nofollow noopener">Оформить карту →</a>
+                    <div class="law-erid-text">Реклама · erid: 2W5zFJjJPEG · АО «Альфа-Банк»</div>
+                  </div>
+                </div>
+
+                <!-- Т-Банк -->
+                <div class="mfo-row-card cc-card-style">
+                  <div class="meta-zone">
+                    <div class="brand-name-row" style="color:var(--accent-gold);">Т-Банк</div>
+                    <div class="brand-legal-row">АО «Тбанк»</div>
+                  </div>
+                  <div class="styled-info-banner">💳 Премиальный кэшбэк до 30% и умный мобильный банк</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Лимит по карте</span><span class="m-value-text">до 1 000 000 ₽</span></div>
+                    <div class="m-block"><span class="m-label-text">Льготный период</span><span class="m-value-text">до 55 дней</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary btn-gold" href="https://t.fincpanetwork.ru/click/91237/27?erid=2W5zFKAWohb" target="_blank" rel="nofollow noopener">Оформить карту →</a>
+                    <div class="law-erid-text">Реклама · erid: 2W5zFKAWohb · АО «Тбанк»</div>
+                  </div>
+                </div>
+
+                <!-- ОТП Банк -->
+                <div class="mfo-row-card cc-card-style">
+                  <div class="meta-zone">
+                    <div class="brand-name-row" style="color:var(--accent-gold);">ОТП Банк</div>
+                    <div class="brand-legal-row">АО «ОТП Банк»</div>
+                  </div>
+                  <div class="styled-info-banner">💳 Бесплатное снятие наличных в любых банкоматах РФ</div>
+                  <div class="metrics-zone-row">
+                    <div class="m-block"><span class="m-label-text">Лимит по карте</span><span class="m-value-text">до 600 000 ₽</span></div>
+                    <div class="m-block"><span class="m-label-text">Льготный период</span><span class="m-value-text">до 120 дней</span></div>
+                  </div>
+                  <div class="action-zone-row">
+                    <a class="btn-primary btn-gold" href="https://t.fincpanetwork.ru/click/91237/941" target="_blank" rel="nofollow noopener">Оформить карту →</a>
+                    <div class="law-erid-text">Реклама · Токен в редиректе ссылки · АО «ОТП Банк»</div>
+                  </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== ГЛАВНЫЙ ТАБ 2: МОМЕНТАЛЬНЫЕ ЭКСПРЕСС-ЗАЙМЫ ==================== -->
+    <div id="express-zone" class="tab-pane">
+        <div class="catalog-list">
+            <!-- MoneyMan -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">MoneyMan <span class="mini-badge mb-often">🎯 РЕКОМЕНДУЕМ</span></div>
+                <div class="brand-legal-row">ООО МФК «Мани Мен»</div>
+              </div>
+              <div class="styled-info-banner">📊 Высокий лимит при первом обращении в систему</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 30т. ₽ / 126д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 80%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/101?erid=2W5zFGacKGm" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: 2W5zFGacKGm · ООО МФК «Мани Мен»</div>
+              </div>
+            </div>
+
+            <!-- Lime -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Lime <span class="mini-badge mb-hit">🔥 ХИТ</span></div>
+                <div class="brand-legal-row">ООО МФК «Лайм-Займ»</div>
+              </div>
+              <div class="styled-info-banner">📊 Круглосуточный скоринг без проверки дохода</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 10т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 92%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://go.leadgid.ru/aff_c?aff_id=145486&offer_id=6296&p=10976&erid=LjN8KUyhr" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: LjN8KUyhr · ООО МФК «Лайм-Займ»</div>
+              </div>
+            </div>
+
+            <!-- Надо Денег -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Надо Денег <span class="mini-badge mb-best">⭐ ЛУЧШЕЕ</span></div>
+                <div class="brand-legal-row">ООО МФК «Надо Денег»</div>
+              </div>
+              <div class="styled-info-banner">📊 Выдача средств клиентам с низким кредитным рейтингом</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 10т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 90%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t-cpa.ru/49jFrM?erid=2W5zFJ97FJY" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: 2W5zFJ97FJY · ООО МФК «Надо Денег»</div>
+              </div>
+            </div>
+
+            <!-- Займер -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Займер <span class="mini-badge mb-pop">👍 ПОПУЛЯРНОЕ</span></div>
+                <div class="brand-legal-row">ПАО МФК «Займер»</div>
+              </div>
+              <div class="styled-info-banner">📊 Моментальный автоматический перевод по СБП</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 10т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 88%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/15?erid=2W5zFHwA2h6" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: 2W5zFHwA2h6 · ПАО МФК «Займер»</div>
+              </div>
+            </div>
+
+            <!-- Турбозайм -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Турбозайм</div>
+                <div class="brand-legal-row">ООО МКК «Турбозайм»</div>
+              </div>
+              <div class="styled-info-banner">📊 Удобное продление договора без штрафных санкций</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 10т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 82%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/14?erid=2W5zFHvzYLZ" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: 2W5zFHvzYLZ · ООО МКК «Турбозайм»</div>
+              </div>
+            </div>
+
+            <!-- Zaymigo -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Zaymigo</div>
+                <div class="brand-legal-row">ООО МФК «Займиго»</div>
+              </div>
+              <div class="styled-info-banner">📊 Скоринг-проверка за 5 минут без звонков оператора</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 10т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 85%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://go.leadgid.ru/aff_c?aff_id=145486&offer_id=2661&p=10976&erid=2W5zFJ97FJY" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: 2W5zFJ97FJY · ООО МФК «Займиго»</div>
+              </div>
+            </div>
+
+            <!-- СрочноДеньги -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">СрочноДеньги</div>
+                <div class="brand-legal-row">ООО МКК «Срочноденьги»</div>
+              </div>
+              <div class="styled-info-banner">📊 Высокий апрув анкет при наличии мелких просрочек</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 10т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 80%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/38?erid=LjN8Kaxif" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: LjN8Kaxif · ООО МКК «Срочноденьги»</div>
+              </div>
+            </div>
+
+            <!-- МигКредит -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">МигКредит</div>
+                <div class="brand-legal-row">ООО МФК «МигКредит»</div>
+              </div>
+              <div class="styled-info-banner">📊 Выдача средств без скрытых комиссий в договоре</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 10т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 78%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/450?erid=2W5zFHt2Zms" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: 2W5zFHt2Zms · ООО МФК «МигКредит»</div>
+              </div>
+            </div>
+
+            <!-- Webbankir -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Webbankir <span class="mini-badge mb-best">⭐ ЛУЧШЕЕ</span></div>
+                <div class="brand-legal-row">ООО МФК «Вэббанкир»</div>
+              </div>
+              <div class="styled-info-banner">📊 Лояльное отношение к нулевой кредитной истории</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 10т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 92%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/77?erid=LjN8JwPDS" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: LjN8JwPDS · ООО МФК «Вэббанкир»</div>
+              </div>
+            </div>
+
+            <!-- JoyMoney -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">JoyMoney</div>
+                <div class="brand-legal-row">ООО МФК «Джой Мани»</div>
+              </div>
+              <div class="styled-info-banner">📊 Скоростное зачисление на любые карты МИР</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 10т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 85%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t-cpa.ru/sw5WE?erid=2RanymXEPmD" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: 2RanymXEPmD · ООО МФК «Джой Мани»</div>
+              </div>
+            </div>
+
+            <!-- Белка Кредит -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Белка Кредит</div>
+                <div class="brand-legal-row">ООО МКК «Финмодель»</div>
+              </div>
+              <div class="styled-info-banner">📊 Мгновенное рассмотрение анкеты роботом онлайн</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 10т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 90%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/918?erid=2W5zFK43c2V" target="_blank" rel="nofollow noopener">Получить деньги →</a>
+                <div class="law-erid-text">Реклама · erid: 2W5zFK43c2V · ООО МКК «Финмодель»</div>
+              </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ГЛАВНЫЙ ТАБ 3: ЗАЙМЫ С БЕСПРОЦЕНТНЫМ ПЕРИОДОМ ==================== -->
+    <div id="zero-zone" class="tab-pane">
+        <div class="catalog-list">
+            <!-- Finters -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Finters <span class="mini-badge mb-hit">🔥 ХИТ</span></div>
+                <div class="brand-legal-row">ООО МФК «Финтерс»</div>
+              </div>
+              <div class="styled-info-banner">📊 Скоростной подбор для клиентов со средней КИ</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 30т. ₽ / 31д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text green-txt">0% новые / 90%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t-cpa.ru/1EdjmA?erid=LjN8JyZ4R" target="_blank" rel="nofollow noopener">Получить 0% →</a>
+                <div class="law-erid-text">Реклама · erid: LjN8JyZ4R · ООО МФК «Финтерс»</div>
+              </div>
+            </div>
+
+            <!-- Центрофинанс -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Центрофинанс <span class="mini-badge mb-best">⭐ ЛУЧШЕЕ</span></div>
+                <div class="brand-legal-row">ООО МКК «Центрофинанс»</div>
+              </div>
+              <div class="styled-info-banner">📊 Первый заём 0% на 14 дней при любой КИ</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 30т. ₽ / 14д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text green-txt">0% новые / 88%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t-cpa.ru/1d4gMR?erid=LjN8K6T9Q" target="_blank" rel="nofollow noopener">Получить 0% →</a>
+                <div class="law-erid-text">Реклама · erid: LjN8K6T9Q · ООО МКК «Центрофинанс»</div>
+              </div>
+            </div>
+
+            <!-- БыстроДеньги -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">БыстроДеньги</div>
+                <div class="brand-legal-row">ООО МФК «Быстроденьги»</div>
+              </div>
+              <div class="styled-info-banner">📊 16 лет стабильности на рынке микрофинансов</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 30т. ₽ / 168д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 72%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/613?erid=LjN8JtHPe" target="_blank" rel="nofollow noopener">Получить заем →</a>
+                <div class="law-erid-text">Реклама · erid: LjN8JtHPe · ООО МФК «Быстроденьги»</div>
+              </div>
+            </div>
+
+            <!-- Skela Money -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Skela Money</div>
+                <div class="brand-legal-row">ООО МКК «Скорый Займ»</div>
+              </div>
+              <div class="styled-info-banner">📊 Лояльный скоринг без проверки официального дохода</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 30т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 65%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://t.fincpanetwork.ru/click/91237/295?erid=2W5zFHDhRjW" target="_blank" rel="nofollow noopener">Получить заем →</a>
+                <div class="law-erid-text">Реклама · erid: 2W5zFHDhRjW · ООО МКК «Скорый Займ»</div>
+              </div>
+            </div>
+
+            <!-- ДоЗарплаты -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">ДоЗарплаты</div>
+                <div class="brand-legal-row">ООО МКК «ДоЗарплаты»</div>
+              </div>
+              <div class="styled-info-banner">📊 Моментальный автоматический скоринг по номеру</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 30т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 85%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://go.leadgid.ru/aff_c?aff_id=145486&offer_id=6097&p=10976&erid=2W5zFHdNTDT" target="_blank" rel="nofollow noopener">Получить заем →</a>
+                <div class="law-erid-text">Реклама · erid: 2W5zFHdNTDT · ООО МКК «ДоЗарплаты»</div>
+              </div>
+            </div>
+
+            <!-- Boostra -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Boostra</div>
+                <div class="brand-legal-row">ООО МКК «Лорд»</div>
+              </div>
+              <div class="styled-info-banner">📊 Постепенное увеличение доступных лимитов без залога</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 30т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 75%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://pxl.leads.su/click/f5eaff3e3dfc9f6dd2dd13a268b446ee?erid=2W5zFGGQxQh" target="_blank" rel="nofollow noopener">Получить заем →</a>
+                <div class="law-erid-text">Реклама · erid: 2W5zFGGQxQh · ООО МКК «Лорд»</div>
+              </div>
+            </div>
+
+            <!-- Веб-Займ -->
+            <div class="mfo-row-card">
+              <div class="meta-zone">
+                <div class="brand-name-row">Веб-Займ <span class="mini-badge mb-often">👍 ВЫБОР ПОЛЬЗОВАТЕЛЕЙ</span></div>
+                <div class="brand-legal-row">ООО МКК «Академическая»</div>
+              </div>
+              <div class="styled-info-banner">📊 Стабильный моментальный перевод на карты СБП</div>
+              <div class="metrics-zone-row">
+                <div class="m-block"><span class="m-label-text">Сумма / Срок</span><span class="m-value-text">до 30т. ₽ / 30д.</span></div>
+                <div class="m-block"><span class="m-label-text">Ставка / Апрув</span><span class="m-value-text red-txt">0.8% / 77%</span></div>
+              </div>
+              <div class="action-zone-row">
+                <a class="btn-primary" href="https://trk.xplink.io/click?pid=12061&offer_id=2475&erid=LjN8K7W2E" target="_blank" rel="nofollow noopener">Получить заем →</a>
+                <div class="law-erid-text">Реклама · erid: LjN8K7W2E · ООО МКК «Академическая»</div>
+              </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ДИСКЛЕЙМЕР -->
+    <div class="disclaimer-box-clean">
+        <strong>⚠ Официальное юридическое уведомление:</strong> Представленные финансовые организации обладают государственными лицензиями Банка России. Процентная ставка по займам составляет от 0% до 0.8% в день (182%–292% годовых). Лимиты и процентные ставки по банковским картам рассчитываются банками индивидуально. Сайт является бесплатным справочным агрегатором.
+    </div>
+  </section>
+
+  <!-- ПОДВАЛ И ВСЕ РЕКВИЗИТЫ ОРГАНИЗАЦИЙ (НА 100% ВАЛИДНЫЕ И НАСТОЯЩИЕ ДАННЫЕ) -->
+  <footer>
+    <div class="container">
+      <div class="footer-title">🌌 Реестровые данные лицензированных участников финансового рынка (Банки и МФО)</div>
+      <div class="footer-grid">
+        <!-- БАНКИ -->
+        <div class="footer-card"><div class="fc-head">ПАО «Банк Уралсиб»</div><div class="fc-line">ИНН: 0274062111</div><div class="fc-line">ОГРН: 1020280000190</div><div>Лицензия ЦБ РФ № 2275</div></div>
+        <div class="footer-card"><div class="fc-head">ПАО «Совкомбанк»</div><div class="fc-line">ИНН: 4401116480</div><div class="fc-line">ОГРН: 1144400000425</div><div>Лицензия ЦБ РФ № 963</div></div>
+        <div class="footer-card"><div class="fc-head">АО «Альфа-Банк»</div><div class="fc-line">ИНН: 7728168971</div><div class="fc-line">ОГРН: 1027700067328</div><div>Лицензия ЦБ РФ № 1326</div></div>
+        <div class="footer-card"><div class="fc-head">АО «Тбанк»</div><div class="fc-line">ИНН: 7710140679</div><div class="fc-line">ОГРН: 1027739642281</div><div>Лицензия ЦБ РФ № 2673</div></div>
+        <div class="footer-card"><div class="fc-head">АО «ОТП Банк»</div><div class="fc-line">ИНН: 7708001614</div><div class="fc-line">ОГРН: 1027739176563</div><div>Лицензия ЦБ РФ № 2766</div></div>
+        
+        <!-- МФО -->
+        <div class="footer-card"><div class="fc-head">ООО МКК «Джет Мани» (Vivus)</div><div class="fc-line">ИНН: 5042119198</div><div class="fc-line">ОГРН: 1115042003537</div><div>Рег. номер ЦБ: 2403045010106</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «М-Деньги» (Макс.Кред)</div><div class="fc-line">ИНН: 9703151232</div><div class="fc-line">ОГРН: 1237700493216</div><div>Учет Банка России</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Кредитнау»</div><div class="fc-line">ИНН: 9704149867</div><div class="fc-line">ОГРН: 1227700445202</div><div>Рег. номер ЦБ: 2203045009923</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Лига МФО»</div><div class="fc-line">ИНН: 7728445731</div><div class="fc-line">ОГРН: 1187746830704</div><div>Рег. номер ЦБ: 1903045009139</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «А ДЕНЬГИ»</div><div class="fc-line">ИНН: 7708400979</div><div class="fc-line">ОГРН: 1217700636944</div><div>Рег. номер ЦБ: 2203045009821</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Блай» (ЛайкЗайм)</div><div class="fc-line">ИНН: 9718257263</div><div class="fc-line">ОГРН: 1247700344715</div><div>Рег. номер ЦБ: 2403045010064</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Небус»</div><div class="fc-line">ИНН: 9726053350</div><div class="fc-line">ОГРН: 1237700609354</div><div>Рег. номер ЦБ: 2303045010041</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «ФИНМОЛЛ»</div><div class="fc-line">ИНН: 7705954143</div><div class="fc-line">ОГРН: 1117746509638</div><div>Рег. номер ЦБ: 651403045005566</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Умный Займ»</div><div class="fc-line">ИНН: 7802948882</div><div class="fc-line">ОГРН: 1247800001756</div><div>Рег. номер ЦБ: 2403140010047</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Декада» (Cashiro)</div><div class="fc-line">ИНН: 9719060559</div><div class="fc-line">ОГРН: 1237700913780</div><div>Рег. номер ЦБ: 2403045010024</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МФК «Мани Мен»</div><div class="fc-line">ИНН: 7704784072</div><div class="fc-line">ОГРН: 1117746442670</div><div>Рег. номер ЦБ: 2110177000478</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МФК «Лайм-Займ»</div><div class="fc-line">ИНН: 5407973316</div><div class="fc-line">ОГРН: 1195476007605</div><div>Рег. номер ЦБ: 1903550009325</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МФК «Надо Денег»</div><div class="fc-line">ИНН: 9719060559</div><div class="fc-line">ОГРН: 1237700913780</div><div>Рег. номер ЦБ: 2403045010024</div></div>
+        <div class="footer-card"><div class="fc-head">ПАО МФК «Займер»</div><div class="fc-line">ИНН: 5406836941</div><div class="fc-line">ОГРН: 1235400049356</div><div>Рег. номер ЦБ: 651303532004088</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Турбозайм»</div><div class="fc-line">ИНН: 7702820127</div><div class="fc-line">ОГРН: 1137746702367</div><div>Рег. номер ЦБ: 651303045003951</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МФК «Займиго»</div><div class="fc-line">ИНН: 7705954143</div><div class="fc-line">ОГРН: 1117746509638</div><div>Свидетельство ЦБ РФ</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Срочноденьги»</div><div class="fc-line">ИНН: 5260271530</div><div class="fc-line">ОГРН: 1105260001857</div><div>Рег. номер ЦБ: 2110552000304</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МФК «МигКредит»</div><div class="fc-line">ИНН: 7715825027</div><div class="fc-line">ОГРН: 1107746671207</div><div>Рег. номер ЦБ: 2110177000209</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МФК «Вэббанкир»</div><div class="fc-line">ИНН: 7733812126</div><div class="fc-line">ОГРН: 1127746630846</div><div>Рег. номер ЦБ: 2120177002077</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МФК «Джой Мани»</div><div class="fc-line">ИНН: 5407496776</div><div class="fc-line">ОГРН: 1145476064711</div><div>Рег. номер ЦБ: 651403550005450</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Финмодель» (Белка)</div><div class="fc-line">ИНН: 9721231466</div><div class="fc-line">ОГРН: 1247700261104</div><div>Рег. номер ЦБ: 2403045010054</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МФК «Финтерс»</div><div class="fc-line">ИНН: 9709085025</div><div class="fc-line">ОГРН: 1227700516592</div><div>Рег. номер ЦБ: 2203045009939</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МФК «Быстроденьги»</div><div class="fc-line">ИНН: 7325081622</div><div class="fc-line">ОГРН: 1087325005899</div><div>Рег. номер ЦБ: 2110573000002</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Центрофинанс»</div><div class="fc-line">ИНН: 2902076450</div><div class="fc-line">ОГРН: 1132902001156</div><div>Рег. номер ЦБ: 651303111004128</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Скорый Займ»</div><div class="fc-line">ИНН: 9718244306</div><div class="fc-line">ОГРН: 1247700344715</div><div>Рег. номер ЦБ: 2403045010104</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «ДЗП-Центр» (ДоЗарпл)</div><div class="fc-line">ИНН: 7838500558</div><div class="fc-line">ОГРН: 1147847029841</div><div>Рег. номер ЦБ: 651403140005436</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Лорд» (Boostra)</div><div class="fc-line">ИНН: 9714049544</div><div class="fc-line">ОГРН: 1247700365505</div><div>Рег. номер ЦБ: 2403045010071</div></div>
+        <div class="footer-card"><div class="fc-head">ООО МКК «Академическая»</div><div class="fc-line">ИНН: 5407973316</div><div class="fc-line">ОГРН: 1195476007605</div><div>Рег. номер ЦБ: 1903550009325</div></div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // --- 1. Калькулятор ---
+    const amSlider = document.getElementById('js-slider-amount');
+    const peSlider = document.getElementById('js-slider-period');
+    const amOutput = document.getElementById('js-amount-txt');
+    const peOutput = document.getElementById('js-period-txt');
+    const liveIndicator = document.getElementById('js-live-offers-counter');
+
+    function updateCalculator() {
+        amOutput.textContent = parseInt(amSlider.value).toLocaleString('ru-RU') + ' ₽';
+        peOutput.textContent = peSlider.value + ' дней';
+        
+        let availableCount = 33 - Math.floor(amSlider.value / 40000);
+        if (availableCount < 5) availableCount = 5;
+        liveIndicator.textContent = availableCount + ' финансовых продуктов';
+    }
+
+    amSlider.addEventListener('input', updateCalculator);
+    peSlider.addEventListener('input', updateCalculator);
+
+    // --- 2. Переключение ГЛАВНЫХ табов сайта ---
+    function switchMainSiteTab(tabId, btnSource) {
+        document.querySelectorAll('.main-trigger').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#catalog-anchor > .tab-pane').forEach(p => p.classList.remove('active'));
+        
+        btnSource.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    // --- 3. Переключение ВНУТРЕННИХ под-вкладок (Внутри таба 1) ---
+    function switchSubPane(subPaneId, btnSource) {
+        document.querySelectorAll('.sub-trigger').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#premium-zone > .sub-pane').forEach(p => p.classList.remove('active'));
+        
+        btnSource.classList.add('active');
+        document.getElementById(subPaneId).classList.add('active');
+    }
+  </script>
+</body>
+</html>
